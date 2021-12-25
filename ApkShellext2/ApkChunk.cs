@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 
-namespace ApkShellext2.ApkChunk
+namespace ApkShellext2.Z.ApkChunk
 {
     /// <summary>
     /// From R.java
