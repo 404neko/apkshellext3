@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Svg;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Xml;
-using Svg;
 
 namespace ApkShellext2
 {
@@ -42,49 +38,62 @@ namespace ApkShellext2
         private static char[] SVGCommandAbsolute = { 'M', 'L', 'H', 'V', 'C', 'S', 'Q', 'T', 'A', 'Z', 'z' };
         private static char[] SVGCommandRelated = { 'm', 'l', 'h', 'v', 'c', 's', 'q', 't', 'a' };
         private static char[] SVGCommand = { 'M', 'L', 'H', 'V', 'C', 'S', 'Q', 'T', 'A', 'Z', 'z', 'm', 'l', 'h', 'v', 'c', 's', 'q', 't', 'a' };
-        private string[] cmd;
+        // private string[] cmd;
         private Size _size;
         private XmlDocument _xml;
         public ApkQuickReader.ApkReader apkreader { set; get; }
 
-        public VectorDrawableRender() {
+        public VectorDrawableRender()
+        {
 
         }
 
-        public VectorDrawableRender(XmlDocument xml) {
+        public VectorDrawableRender(XmlDocument xml)
+        {
             _xml = xml;
         }
 
-        public void addCmd() {
+        public void addCmd()
+        {
 
         }
 
-        public Size size {
-            get {
+        public Size size
+        {
+            get
+            {
                 return _size;
             }
-            set {
+            set
+            {
                 _size = value;
             }
         }
 
-        public Bitmap image {
-            get {
+        public Bitmap image
+        {
+            get
+            {
                 return getImage(_xml);
             }
         }
 
-        public Bitmap getImage(XmlDocument xml) {
+        public Bitmap getImage(XmlDocument xml)
+        {
             XmlElement vector = (XmlElement)xml.DocumentElement.SelectSingleNode("/vector");
             int viewportWidth = 0, viewportHeight = 0;
             //int width = 0, height = 0;
-            if (vector.HasAttribute("viewportWidth")) {
+            if (vector.HasAttribute("viewportWidth"))
+            {
                 viewportWidth = int.Parse(vector.GetAttribute("viewportWidth"));
             }
-            if (vector.HasAttribute("viewportHeight")) {
+            if (vector.HasAttribute("viewportHeight"))
+            {
                 viewportHeight = int.Parse(vector.GetAttribute("viewportHeight"));
                 if (viewportWidth == 0) viewportWidth = viewportHeight;
-            } else {
+            }
+            else
+            {
                 viewportHeight = viewportWidth;
             }
             //if (vector.HasAttribute("width")) {
@@ -98,28 +107,39 @@ namespace ApkShellext2
             //    height = viewportWidth;
             //}
             Bitmap b = new Bitmap(viewportWidth, viewportHeight);
-            using (Graphics g = Graphics.FromImage(b)) {
+            using (Graphics g = Graphics.FromImage(b))
+            {
                 XmlElement group = (XmlElement)vector.SelectSingleNode("group");
                 XmlNodeList nl;
-                if (group != null) {
+                if (group != null)
+                {
                     nl = group.SelectNodes("path");
-                } else {
+                }
+                else
+                {
                     nl = vector.SelectNodes("path");
                 }
-                foreach (XmlNode n in nl) {
+                foreach (XmlNode n in nl)
+                {
                     XmlElement elem = (XmlElement)n;
                     string pathdata = elem.GetAttribute("pathData");
                     GraphicsPath path = Convert2Path(pathdata);
                     Brush fill = null;
-                    if (elem.HasAttribute("fillColor")) {
+                    if (elem.HasAttribute("fillColor"))
+                    {
                         string fillcolor = elem.GetAttribute("fillColor");
-                        if (fillcolor.EndsWith(".xml")) {//gradien
+                        if (fillcolor.EndsWith(".xml"))
+                        {//gradien
 
-                        } else {
+                        }
+                        else
+                        {
                             int color = int.Parse(elem.GetAttribute("fillColor").Substring(2), System.Globalization.NumberStyles.HexNumber);
                             fill = new SolidBrush(Color.FromArgb(color));
                         }
-                    } else {
+                    }
+                    else
+                    {
                         fill = new SolidBrush(Color.Black);
                     }
                     g.FillPath(fill, path);
@@ -129,7 +149,8 @@ namespace ApkShellext2
             return b;
         }
 
-        public static GraphicsPath Convert2Path(string pathdata) {
+        public static GraphicsPath Convert2Path(string pathdata)
+        {
             GraphicsPath path = new GraphicsPath(FillMode.Alternate);
 #if USE_NATIVE_SVG_PARSER
             #region native
@@ -334,12 +355,16 @@ namespace ApkShellext2
             #endregion
 #else
             #region Use SVG lib
-            try {
-                Svg.Pathing.SvgPathSegmentList l = SvgPathBuilder.Parse(pathdata);
-                foreach (Svg.Pathing.SvgPathSegment s in l) {
+            try
+            {
+                Svg.Pathing.SvgPathSegmentList l = SvgPathBuilder.Parse(pathdata.AsSpan());
+                foreach (Svg.Pathing.SvgPathSegment s in l)
+                {
                     s.AddToPath(path);
                 }
-            } catch (Exception e){
+            }
+            catch (Exception e)
+            {
                 Utility.Log(null, "VectorDrawable, d=" + pathdata, e.Message);
             }
             #endregion
@@ -347,11 +372,13 @@ namespace ApkShellext2
             return path;
         }
 
-        private static PointF ConvertAbsolute(bool isrelative, PointF start, PointF p) {
+        private static PointF ConvertAbsolute(bool isrelative, PointF start, PointF p)
+        {
             return (isrelative) ? new PointF(start.X + p.X, start.Y + p.Y) : p;
         }
 
-        private static PointF Reflection(PointF p, PointF center) {
+        private static PointF Reflection(PointF p, PointF center)
+        {
             return new PointF((2 * center.X) - p.X, (2 * center.Y) - p.Y);
         }
 
@@ -364,29 +391,38 @@ namespace ApkShellext2
         // 2d *2d
         // |a b| * |e f| = |ae+bg af+bh|
         // |c d|   |g h|   |ce+dg cf+dh|
-        private static double[,] MultiplyMatrix(double[,] a, double[,] b) {
-            if (a.GetLength(1) == b.GetLength(0)) {
+        private static double[,] MultiplyMatrix(double[,] a, double[,] b)
+        {
+            if (a.GetLength(1) == b.GetLength(0))
+            {
                 double[,] c = new double[a.GetLength(0), b.GetLength(1)];
-                for (int i = 0; i < c.GetLength(0); i++) {
-                    for (int j = 0; j < c.GetLength(1); j++) {
+                for (int i = 0; i < c.GetLength(0); i++)
+                {
+                    for (int j = 0; j < c.GetLength(1); j++)
+                    {
                         for (int k = 0; k < a.GetLength(1); k++) // OR k<b.GetLength(0)
                             c[i, j] += a[i, k] * b[k, j];
                     }
                 }
                 return c;
-            } else {
+            }
+            else
+            {
                 throw new Exception("Matrix cannot be mutilplied");
             }
         }
 
-        private static double VectorLength(double[,] vector) {
-            return Math.Sqrt(vector[0,0] * vector[0,0] + vector[1,0] * vector[1,0]);
+        private static double VectorLength(double[,] vector)
+        {
+            return Math.Sqrt(vector[0, 0] * vector[0, 0] + vector[1, 0] * vector[1, 0]);
         }
 
-        private static double VectorAngle(double[,] a, double[,] b) {
+        private static double VectorAngle(double[,] a, double[,] b)
+        {
             double axb = a[0, 0] * b[0, 0] + a[1, 0] * b[1, 0];
-            double temp= Math.Acos(axb / (VectorLength(a) * VectorLength(b)));
-            if (a[0,0]*b[1,0]-a[1,0]*b[0,0] < 0) {
+            double temp = Math.Acos(axb / (VectorLength(a) * VectorLength(b)));
+            if (a[0, 0] * b[1, 0] - a[1, 0] * b[0, 0] < 0)
+            {
                 return -temp;
             }
             return temp;

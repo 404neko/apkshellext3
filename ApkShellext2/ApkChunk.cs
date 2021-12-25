@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections;
 using System.IO;
+using System.Text;
 using System.Xml;
 
 namespace ApkShellext2.ApkChunk
@@ -1016,40 +1013,50 @@ namespace ApkShellext2.ApkChunk
         protected ApkChunkHeader header;
         protected ApkChunk top;
 
-        public UInt32 size {
-            get {
+        public UInt32 size
+        {
+            get
+            {
                 return header.size;
             }
         }
-        public RES_TYPE type {
-            get {
+        public RES_TYPE type
+        {
+            get
+            {
                 return header.type;
             }
         }
 
         public List<ApkChunk> chunks;
 
-        protected ApkChunk (byte[] bytes) {
+        protected ApkChunk(byte[] bytes)
+        {
             top = this;
             this.bytes = bytes;
             offset = 0;
             chunks = new List<ApkChunk>();
-            using (MemoryStream ms = GetMemoryStream()) {
+            using (MemoryStream ms = GetMemoryStream())
+            {
                 header = ReadChunkHeader(ms);
                 ms.Seek(offset + header.headerSize, SeekOrigin.Begin);
                 ReadChunkBody(ms);
             }
         }
 
-        public ApkChunk (MemoryStream ms, ApkChunk top = null) {
-            if (top == null) {
+        public ApkChunk(MemoryStream ms, ApkChunk top = null)
+        {
+            if (top == null)
+            {
                 this.top = this;
                 bytes = ms.ToArray();
-            } else {
+            }
+            else
+            {
                 this.top = top;
                 bytes = top.bytes;
             }
-          
+
             offset = ms.Position;
             header = ReadChunkHeader(ms);
             chunks = new List<ApkChunk>();
@@ -1057,8 +1064,10 @@ namespace ApkShellext2.ApkChunk
             ReadChunkBody(ms);
         }
 
-        protected ApkChunkHeader ReadChunkHeader(MemoryStream ms) {
-            using (BinaryReader br = new BinaryReader(ms, Encoding.Default, true)) {
+        protected ApkChunkHeader ReadChunkHeader(MemoryStream ms)
+        {
+            using (BinaryReader br = new BinaryReader(ms, Encoding.Default, true))
+            {
                 ApkChunkHeader header = new ApkChunkHeader();
                 header.type = (RES_TYPE)br.ReadUInt16();
                 header.headerSize = br.ReadUInt16();
@@ -1067,11 +1076,13 @@ namespace ApkShellext2.ApkChunk
             }
         }
 
-        public MemoryStream GetMemoryStream() {
+        public MemoryStream GetMemoryStream()
+        {
             return new MemoryStream(bytes);
         }
 
-        protected virtual void ReadChunkBody(MemoryStream ms) {
+        protected virtual void ReadChunkBody(MemoryStream ms)
+        {
             ms.Seek(offset + size, SeekOrigin.Begin);
         }
 
@@ -1080,9 +1091,11 @@ namespace ApkShellext2.ApkChunk
         /// </summary>
         /// <param name="bytes">stream read from apk zip</param>
         /// <returns>The top chunk, either a xml chunk or a resource table chunk</returns>
-        public static ApkChunk ReadChunkFile(ref byte[] bytes) {
+        public static ApkChunk ReadChunkFile(ref byte[] bytes)
+        {
             RES_TYPE chunktype = (RES_TYPE)(bytes[0] + bytes[1] << 8);
-            switch (chunktype) {
+            switch (chunktype)
+            {
                 case RES_TYPE.RES_XML_TYPE:
                     return new ApkXMLChunk(bytes);
                 case RES_TYPE.RES_TABLE_TYPE:
@@ -1090,7 +1103,7 @@ namespace ApkShellext2.ApkChunk
                 default:
                     throw new Exception("Unrecorgnized Chunk File type");
             }
-        }        
+        }
     }
 
     [Serializable]
@@ -1098,10 +1111,12 @@ namespace ApkShellext2.ApkChunk
     {
         public ApkStringPoolChunk(MemoryStream ms, ApkChunk top) : base(ms, top) { }
 
-        public string LookUp(uint stringID) {
+        public string LookUp(uint stringID)
+        {
             if ((int)stringID == -1) return ""; // -1 means none
             using (MemoryStream ms = GetMemoryStream())
-            using (BinaryReader br = new BinaryReader(ms)) {
+            using (BinaryReader br = new BinaryReader(ms))
+            {
                 ms.Seek(offset + header.headerSize, SeekOrigin.Begin);
                 // comes to the start of string pool chunk body, 
                 int flags = br.ReadInt32();
@@ -1111,21 +1126,26 @@ namespace ApkShellext2.ApkChunk
                 ms.Seek(stringID * 4, SeekOrigin.Current);
                 int stringPos = br.ReadInt32();
                 ms.Seek(offset + stringStart + stringPos, SeekOrigin.Begin);
-                if (isUTF_8) {
+                if (isUTF_8)
+                {
                     int u16len = br.ReadByte(); // u16len
-                    if ((u16len & 0x80) != 0) {// larger than 128
+                    if ((u16len & 0x80) != 0)
+                    {// larger than 128
                         u16len = ((u16len & 0x7F) << 8) + br.ReadByte();
                     }
 
                     int u8len = br.ReadByte(); // u8len
-                    if ((u8len & 0x80) != 0) {// larger than 128
+                    if ((u8len & 0x80) != 0)
+                    {// larger than 128
                         u8len = ((u8len & 0x7F) << 8) + br.ReadByte();
                     }
                     return Encoding.UTF8.GetString(br.ReadBytes(u8len));
-                } else // UTF_16
+                }
+                else // UTF_16
                 {
                     int u16len = br.ReadUInt16();
-                    if ((u16len & 0x8000) != 0) {// larger than 32768
+                    if ((u16len & 0x8000) != 0)
+                    {// larger than 32768
                         u16len = ((u16len & 0x7FFF) << 16) + br.ReadUInt16();
                     }
 
@@ -1136,13 +1156,14 @@ namespace ApkShellext2.ApkChunk
     }
 
     [Serializable]
-    public class ApkTableChunk : ApkChunk {
+    public class ApkTableChunk : ApkChunk
+    {
         public ApkTableChunk(byte[] bytes) : base(bytes) { }
-        public ApkTableChunk (MemoryStream ms, ApkChunk top) : base(ms, top) { }
+        public ApkTableChunk(MemoryStream ms, ApkChunk top) : base(ms, top) { }
     }
 
     [Serializable]
-    public class ApkTableTypeSpecChunk:ApkChunk
+    public class ApkTableTypeSpecChunk : ApkChunk
     {
         public ApkTableTypeSpecChunk(MemoryStream ms, ApkChunk top) : base(ms, top) { }
     }
@@ -1156,47 +1177,62 @@ namespace ApkShellext2.ApkChunk
         protected XmlDocument doc;
 
         public ApkXMLChunk(byte[] bytes) : base(bytes) { }
-        public ApkXMLChunk(MemoryStream ms, ApkChunk top=null) : base(ms, top) {
+        public ApkXMLChunk(MemoryStream ms, ApkChunk top = null) : base(ms, top)
+        {
             if (istop)
-                doc = new XmlDocument();            
+                doc = new XmlDocument();
         }
 
-        public XmlDocument XMLDoc {
-            get {
-                if (istop) {
+        public XmlDocument XMLDoc
+        {
+            get
+            {
+                if (istop)
+                {
                     return doc;
-                } else {
+                }
+                else
+                {
                     var topchunk = top as ApkXMLChunk;
                     return topchunk.doc;
                 }
             }
         }
 
-        public XmlNode Node {
-            get {
+        public XmlNode Node
+        {
+            get
+            {
                 return doc;
             }
         }
 
-        private bool istop {
-            get {
+        private bool istop
+        {
+            get
+            {
                 return top == null;
             }
         }
 
-        protected override void ReadChunkBody(MemoryStream ms) {
-            if (top != this) { // if not top
+        protected override void ReadChunkBody(MemoryStream ms)
+        {
+            if (top != this)
+            { // if not top
                 ms.Seek(offset + size, SeekOrigin.Begin); // 
                 return; // don't read if not xml top
             }
-            using (BinaryReader br = new BinaryReader(ms,Encoding.Default,true)) {
-                while ((ms.Position - offset) < size) {
+            using (BinaryReader br = new BinaryReader(ms, Encoding.Default, true))
+            {
+                while ((ms.Position - offset) < size)
+                {
                     ApkChunk chunk;
                     RES_TYPE chunktype = (RES_TYPE)br.ReadUInt16();
                     ms.Seek(-2, SeekOrigin.Current);
-                    switch (chunktype) {
+                    switch (chunktype)
+                    {
                         case RES_TYPE.RES_STRING_POOL_TYPE:
-                            chunk = new ApkStringPoolChunk(ms,this);
+                            chunk = new ApkStringPoolChunk(ms, this);
                             StringPool = (ApkStringPoolChunk)chunk;
                             break;
                         case RES_TYPE.RES_XML_RESOURCE_MAP_TYPE:
@@ -1219,9 +1255,11 @@ namespace ApkShellext2.ApkChunk
             }
         }
 
-        public virtual string OutputXML() {
+        public virtual string OutputXML()
+        {
             string xml = "";
-            foreach (ApkChunk chunk in chunks) {
+            foreach (ApkChunk chunk in chunks)
+            {
                 if (chunk.type == RES_TYPE.RES_STRING_POOL_TYPE ||
                     chunk.type == RES_TYPE.RES_XML_RESOURCE_MAP_TYPE)
                     continue;
@@ -1231,11 +1269,13 @@ namespace ApkShellext2.ApkChunk
             return xml;
         }
 
-        protected string LookupStringPool(uint id) {
+        protected string LookupStringPool(uint id)
+        {
             return ((ApkXMLChunk)top).StringPool.LookUp(id);
         }
 
-        protected string LookupResourceMap(uint id) {
+        protected string LookupResourceMap(uint id)
+        {
             return ((ApkXMLChunk)top).ResourceMap.LookUp(id);
         }
     }
@@ -1244,24 +1284,28 @@ namespace ApkShellext2.ApkChunk
     public class ApkXMLElementChunk : ApkXMLChunk
     {
 
-        public ApkXMLElementChunk(MemoryStream ms, ApkXMLChunk top) : base(ms,top) { }
+        public ApkXMLElementChunk(MemoryStream ms, ApkXMLChunk top) : base(ms, top) { }
 
-        public XmlNode Node {
-            get {
+        new public XmlNode Node
+        {
+            get
+            {
                 XmlElement elem = XMLDoc.CreateElement("");
                 return elem;
             }
         }
 
-        public override string OutputXML() {
-            string ns,name;
+        public override string OutputXML()
+        {
+            string ns, name;
             string[] attrinames;
             string[] attrivals;
             UInt16 id;
             UInt16 @class;
             UInt16 style;
             using (MemoryStream ms = GetMemoryStream())
-            using (BinaryReader br = new BinaryReader(ms)) {
+            using (BinaryReader br = new BinaryReader(ms))
+            {
                 ms.Seek(offset + header.headerSize, SeekOrigin.Begin);
                 ns = LookupStringPool(br.ReadUInt32());
                 name = LookupStringPool(br.ReadUInt32());
@@ -1272,23 +1316,28 @@ namespace ApkShellext2.ApkChunk
                 id = br.ReadUInt16();
                 @class = br.ReadUInt16();
                 style = br.ReadUInt16();
-                ms.Seek(attrstart -8, SeekOrigin.Begin);
+                ms.Seek(attrstart - 8, SeekOrigin.Begin);
                 attrinames = new string[attrcount];
                 attrivals = new string[attrcount];
-                for (int i = 0; i< attrcount; i++) {
+                for (int i = 0; i < attrcount; i++)
+                {
                     ns = LookupStringPool(br.ReadUInt32());
                     attrinames[i] = LookupStringPool(br.ReadUInt32());
                     attrivals[i] = LookupStringPool(br.ReadUInt32());
                 }
             }
             string xml = "<";
-            if (this.type == RES_TYPE.RES_XML_END_ELEMENT_TYPE) {
+            if (this.type == RES_TYPE.RES_XML_END_ELEMENT_TYPE)
+            {
                 xml += "/" + name + ">";
                 return xml;
-            } else {
+            }
+            else
+            {
                 xml += name;
-                xml += " id="+id + " class=" + @class + " style" + style;
-                for (int i = 0; i < attrinames.Length; i++) {
+                xml += " id=" + id + " class=" + @class + " style" + style;
+                for (int i = 0; i < attrinames.Length; i++)
+                {
                     xml += " " + attrinames[i];
                     if (attrinames[i] != "")
                         xml += "=" + attrinames[i];
@@ -1304,11 +1353,13 @@ namespace ApkShellext2.ApkChunk
     {
         private UInt32 prefix;
         private UInt32 uri;
-        public ApkXMLNameSpaceChunk(MemoryStream ms, ApkXMLChunk top) : base(ms,top) {}
+        public ApkXMLNameSpaceChunk(MemoryStream ms, ApkXMLChunk top) : base(ms, top) { }
 
-        public override string OutputXML() {
+        public override string OutputXML()
+        {
             using (MemoryStream ms = GetMemoryStream())
-            using (BinaryReader br = new BinaryReader(ms)) {
+            using (BinaryReader br = new BinaryReader(ms))
+            {
                 ms.Seek(offset + header.headerSize, SeekOrigin.Begin);
                 prefix = br.ReadUInt32();
                 uri = br.ReadUInt32();
@@ -1323,10 +1374,11 @@ namespace ApkShellext2.ApkChunk
     [Serializable]
     public class ApkXMLCDATAChunk : ApkXMLChunk
     {
-        private UInt16 dataid;
+        private UInt16 dataid = 0;
         public ApkXMLCDATAChunk(MemoryStream ms, ApkXMLChunk top) : base(ms, top) { }
 
-        public override string OutputXML() {
+        public override string OutputXML()
+        {
             string xml = @"< ![CDATA[";
             xml += LookupStringPool(dataid);
             xml += @"]] >";
@@ -1335,14 +1387,16 @@ namespace ApkShellext2.ApkChunk
     }
 
     [Serializable]
-    public class ApkXMLResourceMapChunk:ApkChunk
+    public class ApkXMLResourceMapChunk : ApkChunk
     {
         public ApkXMLResourceMapChunk(MemoryStream ms, ApkXMLChunk top) : base(ms, top) { }
 
-        public string LookUp(uint id) {
+        public string LookUp(uint id)
+        {
             using (MemoryStream ms = GetMemoryStream())
-            using (BinaryReader br = new BinaryReader(ms)) {
-                ms.Seek(offset + header.headerSize +id *4, SeekOrigin.Begin);
+            using (BinaryReader br = new BinaryReader(ms))
+            {
+                ms.Seek(offset + header.headerSize + id * 4, SeekOrigin.Begin);
                 return Enum.GetName(typeof(R_attr), br.ReadUInt32());
             }
         }

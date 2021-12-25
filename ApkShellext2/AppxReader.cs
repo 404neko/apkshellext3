@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using ICSharpCode.SharpZipLib.Zip;
-using System.Xml;
+﻿using ICSharpCode.SharpZipLib.Zip;
+using System;
 using System.Drawing;
+using System.IO;
 using System.Text.RegularExpressions;
+using System.Xml;
 
-namespace ApkShellext2 {
+namespace ApkShellext2
+{
     /// <summary>
     /// 
     /// </summary>
-    public class AppxReader : AppPackageReader {
+    public class AppxReader : AppPackageReader
+    {
         private const string AppxManifestXml = @"AppxManifest.xml";
         //private const string elemPackage = @"Package";
         private const string elemIdentity = @"Identity";
@@ -36,19 +34,22 @@ namespace ApkShellext2 {
         private string publisher;
         private string productid;
 
-        public AppxReader(Stream stream) {
+        public AppxReader(Stream stream)
+        {
             FileName = "";
             zip = new ZipFile(stream);
             Extract();
         }
 
-        public AppxReader(string path) {
+        public AppxReader(string path)
+        {
             FileName = path;
             zip = new ZipFile(FileName);
             Extract();
         }
 
-        public void Extract() {
+        public void Extract()
+        {
             ZipEntry en = zip.GetEntry(AppxManifestXml);
             if (en == null)
                 throw new EntryPointNotFoundException("cannot find " + AppxManifestXml);
@@ -64,57 +65,72 @@ namespace ApkShellext2 {
             version = Identity.Attributes[attrVersion].Value.ToString();
             packageName = Identity.Attributes[attrName].Value.ToString();
             publisher = Identity.Attributes[attrPublisher].Value.ToString();
-            Match m = Regex.Match(publisher,@"CN=([^,]*),?");
-            if (m.Success) {
+            Match m = Regex.Match(publisher, @"CN=([^,]*),?");
+            if (m.Success)
+            {
                 publisher = m.Groups[1].Value;
             }
-            
+
             XmlElement DisplayName = packageNode[elemProperties][elemDisplayName];
             appname = DisplayName.FirstChild.Value.ToString();
             XmlElement Logo = packageNode[elemProperties][elemLogo];
-            iconPath = Logo.FirstChild.Value.ToString().Replace(@"\",@"/");
+            iconPath = Logo.FirstChild.Value.ToString().Replace(@"\", @"/");
             XmlElement PhoneIdentity = packageNode[elemPhoneIdentity];
             productid = PhoneIdentity.Attributes[attrPhoneProductID].Value.ToString();
         }
 
-        public override AppPackageReader.AppType Type {
-            get {
+        public override AppPackageReader.AppType Type
+        {
+            get
+            {
                 return AppType.WindowsPhoneApp;
             }
         }
 
-        public override string AppName {
-            get {
+        public override string AppName
+        {
+            get
+            {
                 return appname;
             }
         }
 
-        public override string Version {
-            get {
+        public override string Version
+        {
+            get
+            {
                 return version;
             }
         }
 
-        public override string Publisher {
-            get {
+        public override string Publisher
+        {
+            get
+            {
                 return publisher;
             }
         }
 
-        public override string PackageName {
-            get {
+        public override string PackageName
+        {
+            get
+            {
                 return packageName;
             }
         }
 
-        public override string AppID {
-            get {
+        public override string AppID
+        {
+            get
+            {
                 return productid;
             }
         }
 
-        public override Bitmap Icon {
-            get {
+        public override Bitmap Icon
+        {
+            get
+            {
                 if (iconPath == "")
                     throw new Exception("Cannot find logo path");
                 int dot = iconPath.LastIndexOf(".");
@@ -122,34 +138,45 @@ namespace ApkShellext2 {
                 string extension = iconPath.Substring(dot + 1);
                 ZipEntry logo = null;
                 int scale = -1;
-                foreach (ZipEntry en in zip) {
+                foreach (ZipEntry en in zip)
+                {
                     Match m = Regex.Match(en.Name, name + @"(\.scale\-(\d+))?" + @"\." + extension);
-                    if (m.Success) {
-                        if (m.Groups[1].Value == "") { // exactly matching, no scale
+                    if (m.Success)
+                    {
+                        if (m.Groups[1].Value == "")
+                        { // exactly matching, no scale
                             logo = en;
                             break;
-                        } else { // find the biggest scale
-                            int newScale = int.Parse(m.Groups[2].Value);                            if (newScale > scale) {
+                        }
+                        else
+                        { // find the biggest scale
+                            int newScale = int.Parse(m.Groups[2].Value); if (newScale > scale)
+                            {
                                 logo = en;
                                 scale = newScale;
                             }
                         }
                     }
                 }
-                if (logo != null) {
+                if (logo != null)
+                {
                     //byte[] imageBytes = new byte[logo.Size];
                     //zip.GetInputStream(logo).Read(imageBytes, 0, (int)logo.Size);
                     return new Bitmap(zip.GetInputStream(logo));
-                } else {
+                }
+                else
+                {
                     throw new EntryPointNotFoundException("Cannot find Logo file: " + iconPath);
                 }
             }
         }
 
         private bool disposed = false;
-        protected override void Dispose(bool disposing) {
+        protected override void Dispose(bool disposing)
+        {
             if (disposed) return;
-            if (disposing) {
+            if (disposing)
+            {
                 if (zip != null)
                     zip.Close();
             }
@@ -157,11 +184,13 @@ namespace ApkShellext2 {
             base.Dispose(disposing);
         }
 
-        public void Close() {
+        public void Close()
+        {
             Dispose(true);
         }
 
-        ~AppxReader() {
+        ~AppxReader()
+        {
             Dispose(true);
         }
 

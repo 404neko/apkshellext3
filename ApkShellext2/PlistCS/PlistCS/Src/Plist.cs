@@ -89,7 +89,7 @@ namespace PlistCS
             {
                 using (BinaryReader reader = new BinaryReader(stream))
                 {
-                    byte[] data = reader.ReadBytes((int) reader.BaseStream.Length);
+                    byte[] data = reader.ReadBytes((int)reader.BaseStream.Length);
                     return readBinary(data);
                 }
             }
@@ -129,7 +129,7 @@ namespace PlistCS
 
                 using (XmlWriter xmlWriter = XmlWriter.Create(ms, xmlWriterSettings))
                 {
-                    xmlWriter.WriteStartDocument(); 
+                    xmlWriter.WriteStartDocument();
                     //xmlWriter.WriteComment("DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" " + "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"");
                     xmlWriter.WriteDocType("plist", "-//Apple Computer//DTD PLIST 1.0//EN", "http://www.apple.com/DTDs/PropertyList-1.0.dtd", null);
                     xmlWriter.WriteStartElement("plist");
@@ -184,7 +184,7 @@ namespace PlistCS
 
             offsetTable.Add(objectTable.Count - 8);
 
-            offsetByteSize = RegulateNullBytes(BitConverter.GetBytes(offsetTable[offsetTable.Count-1])).Length;
+            offsetByteSize = RegulateNullBytes(BitConverter.GetBytes(offsetTable[offsetTable.Count - 1])).Length;
 
             List<byte> offsetBytes = new List<byte>();
 
@@ -204,7 +204,7 @@ namespace PlistCS
             objectTable.Add(Convert.ToByte(offsetByteSize));
             objectTable.Add(Convert.ToByte(objRefSize));
 
-            var a = BitConverter.GetBytes((long) totalRefs + 1);
+            var a = BitConverter.GetBytes((long)totalRefs + 1);
             Array.Reverse(a);
             objectTable.AddRange(a);
 
@@ -319,11 +319,11 @@ namespace PlistCS
                 case "string":
                     return node.InnerText;
                 case "integer":
-                  //  int result;
+                    //  int result;
                     //int.TryParse(node.InnerText, System.Globalization.NumberFormatInfo.InvariantInfo, out result);
                     return Convert.ToInt32(node.InnerText, System.Globalization.NumberFormatInfo.InvariantInfo);
                 case "real":
-                    return Convert.ToDouble(node.InnerText,System.Globalization.NumberFormatInfo.InvariantInfo);
+                    return Convert.ToDouble(node.InnerText, System.Globalization.NumberFormatInfo.InvariantInfo);
                 case "false":
                     return false;
                 case "true":
@@ -567,7 +567,7 @@ namespace PlistCS
 
         public static byte[] writeBinaryDate(DateTime obj)
         {
-            List<byte> buffer =new List<byte>(RegulateNullBytes(BitConverter.GetBytes(PlistDateConverter.ConvertToAppleTimeStamp(obj)), 8));
+            List<byte> buffer = new List<byte>(RegulateNullBytes(BitConverter.GetBytes(PlistDateConverter.ConvertToAppleTimeStamp(obj)), 8));
             buffer.Reverse();
             buffer.Insert(0, 0x33);
             objectTable.InsertRange(0, buffer);
@@ -583,8 +583,8 @@ namespace PlistCS
 
         private static byte[] writeBinaryInteger(int value, bool write)
         {
-            List<byte> buffer = new List<byte>(BitConverter.GetBytes((long) value));
-            buffer =new List<byte>(RegulateNullBytes(buffer.ToArray()));
+            List<byte> buffer = new List<byte>(BitConverter.GetBytes((long)value));
+            buffer = new List<byte>(RegulateNullBytes(buffer.ToArray()));
             while (buffer.Count != Math.Pow(2, Math.Log(buffer.Count) / Math.Log(2)))
                 buffer.Add(0);
             int header = 0x10 | (int)(Math.Log(buffer.Count) / Math.Log(2));
@@ -601,7 +601,7 @@ namespace PlistCS
 
         private static byte[] writeBinaryDouble(double value)
         {
-            List<byte> buffer =new List<byte>(RegulateNullBytes(BitConverter.GetBytes(value), 4));
+            List<byte> buffer = new List<byte>(RegulateNullBytes(BitConverter.GetBytes(value), 4));
             while (buffer.Count != Math.Pow(2, Math.Log(buffer.Count) / Math.Log(2)))
                 buffer.Add(0);
             int header = 0x20 | (int)(Math.Log(buffer.Count) / Math.Log(2));
@@ -850,7 +850,7 @@ namespace PlistCS
             DateTime result = PlistDateConverter.ConvertFromAppleTimeStamp(appleTime);
             return result;
         }
-        
+
         private static object parseBinaryInt(int headerPosition)
         {
             int output;
@@ -896,10 +896,10 @@ namespace PlistCS
             byte[] buffer = new byte[charCount];
             byte one, two;
 
-            for (int i = 0; i < charCount; i+=2)
+            for (int i = 0; i < charCount; i += 2)
             {
-                one = objectTable.GetRange(charStartPosition+i,1)[0];
-                two = objectTable.GetRange(charStartPosition + i+1, 1)[0];
+                one = objectTable.GetRange(charStartPosition + i, 1)[0];
+                two = objectTable.GetRange(charStartPosition + i + 1, 1)[0];
 
                 if (BitConverter.IsLittleEndian)
                 {
@@ -925,7 +925,7 @@ namespace PlistCS
 
         #endregion
     }
-    
+
     public enum plistType
     {
         Auto, Binary, Xml

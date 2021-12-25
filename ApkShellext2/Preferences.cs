@@ -1,22 +1,26 @@
-﻿using SharpShell.Diagnostics;
+﻿using ApkShellext2.Properties;
 using System;
-using System.Drawing;
-using System.IO;
-using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Windows.Forms;
-using ApkShellext2.Properties;
-using System.Globalization;
 using System.Configuration;
 using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
 
-namespace ApkShellext2 {
+namespace ApkShellext2
+{
 
-    public partial class Preferences : Form {
-        public Preferences() {
+    public partial class Preferences : Form
+    {
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+        public Preferences()
+        {
             InitializeComponent();
         }
 
@@ -24,7 +28,8 @@ namespace ApkShellext2 {
         private bool formLoaded = false;
         private bool needClearThumbnailCache = false;
 
-        private void Preferences_Load(object sender, EventArgs e) {
+        private void Preferences_Load(object sender, EventArgs e)
+        {
             Utility.Localize();
 
             Log("Using setting file from: " + ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
@@ -32,7 +37,7 @@ namespace ApkShellext2 {
             #region Initialize text
             this.Text = Resources.strPreferencesCaption;
             this.Icon = Icon.FromHandle(Utility.ResizeBitmap(Properties.NonLocalizeResources.logo, 16).GetHicon());
-            
+
             btnOK.Text = Resources.btnOK;
 
             // Tree view on the left
@@ -49,11 +54,14 @@ namespace ApkShellext2 {
 
             #region General Panel
             // Dropdown
-            if (!formLoaded) {
+            if (!formLoaded)
+            {
                 CultureInfo[] culs = Utility.getSupportedLanguages();
-                foreach (var l in culs) {
+                foreach (var l in culs)
+                {
                     combLanguage.Items.Add(l.NativeName);
-                    if (l.LCID == Thread.CurrentThread.CurrentUICulture.LCID) {
+                    if (l.LCID == Thread.CurrentThread.CurrentUICulture.LCID)
+                    {
                         combLanguage.Text = l.NativeName;
                     }
                 }
@@ -64,12 +72,15 @@ namespace ApkShellext2 {
             lblLanguage.Text = Resources.strLanguages;
             //lblHelpTranslate.Text;
             lblCurrentVersion.Text = string.Format(Resources.strCurrVersion, Assembly.GetExecutingAssembly().GetName().Version.ToString());
-            if (Utility.NewVersionAvailible()) {
+            if (Utility.NewVersionAvailible())
+            {
                 lblNewVer.Text = string.Format(Resources.strNewVersionAvailible, Utility.GetSetting("LatestVersion"));
                 btnUpdate.Text = Resources.btnUpdate;
                 btnUpdate.Image = Utility.ResizeBitmap(Properties.NonLocalizeResources.iconUpdate, 16);
                 toolTip1.SetToolTip(btnUpdate, Resources.btnUpdateToolTip);
-            } else {
+            }
+            else
+            {
                 lblNewVer.Text = Resources.strGotLatest;
                 btnUpdate.Text = Resources.btnGitHub;
                 btnUpdate.Image = Utility.ResizeBitmap(Properties.NonLocalizeResources.iconGitHub, 16);
@@ -89,13 +100,13 @@ namespace ApkShellext2 {
             #region Icon Panel
             ckShowOverlay.Text = Resources.strShowOverlayIcon;
             toolTip1.SetToolTip(ckShowOverlay, Resources.strShowOverlayIconToolTip);
-            ckShowOverlay.Checked = Utility.GetSetting("ShowOverLayIcon","False")=="True";
+            ckShowOverlay.Checked = Utility.GetSetting("ShowOverLayIcon", "False") == "True";
             ckShowIPA.Text = Resources.strShowIpaIcon;
-            ckShowIPA.Checked = Utility.GetSetting("ShowIpaIcon","True") == "True";
+            ckShowIPA.Checked = Utility.GetSetting("ShowIpaIcon", "True") == "True";
             ckShowAppxIcon.Text = Resources.strShowAppxIcon;
-            ckShowAppxIcon.Checked = Utility.GetSetting("ShowAppxIcon","False") == "True";
+            ckShowAppxIcon.Checked = Utility.GetSetting("ShowAppxIcon", "False") == "True";
             ckStretchThumbnail.Text = Resources.strStretchThumbnail;
-            ckStretchThumbnail.Checked = Utility.GetSetting("StretchThumbnail","True") == "True";
+            ckStretchThumbnail.Checked = Utility.GetSetting("StretchThumbnail", "True") == "True";
             ckEnableThumbnail.Text = Resources.strEnableThumbnail;
             ckEnableThumbnail.Checked = Utility.GetSetting("EnableThumbnail", "True") == "True";
             ckAdaptiveIconSupport.Text = Resources.strSupportAdaptiveIcon;
@@ -143,7 +154,7 @@ namespace ApkShellext2 {
             #region ToolTip Panel
             lblInfoTipPattern.Text = Resources.strInfoTipPattern;
             txtToolTipPattern.Text = Utility.GetSetting("ToolTipPattern", NonLocalizeResources.strInfoTipDefault);
-            
+
             btnResetInfoTipPattern.Text = Resources.btnResetPattern;
 
             llbInfoTipPattVar.Text = Resources.strReferToWiki;
@@ -157,7 +168,8 @@ namespace ApkShellext2 {
             formLoaded = true;
         }
 
-        private void DisablePenels() {
+        private void DisablePenels()
+        {
             pnlContextMenu.Visible = false;
             pnlGeneral.Visible = false;
             pnlIcon.Visible = false;
@@ -168,7 +180,8 @@ namespace ApkShellext2 {
             btnUpdate.Visible = false;
         }
 
-        private void combLanguage_SelectedIndexChanged(object sender, EventArgs e) {
+        private void combLanguage_SelectedIndexChanged(object sender, EventArgs e)
+        {
             CultureInfo[] culs = Utility.getSupportedLanguages();
             CultureInfo cul = culs[combLanguage.SelectedIndex];
             Utility.SaveSetting("Language", cul.Name);
@@ -176,58 +189,78 @@ namespace ApkShellext2 {
                 this.OnLoad(e);
         }
 
-        private void ckShowIPA_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowIPA_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowIpaIcon", ckShowIPA.Checked);
             Utility.refreshShell();
         }
 
-        private void ckShowAppxIcon_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowAppxIcon_CheckedChanged(object sender, EventArgs e)
+        {
 
-            Utility.SaveSetting("ShowAppxIcon",ckShowAppxIcon.Checked);       
-            SharpShell.Interop.Shell32.SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+            Utility.SaveSetting("ShowAppxIcon", ckShowAppxIcon.Checked);
+            // SharpShell.Interop.Shell32.SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+            SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
         }
 
-        private void ckShowOverlay_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowOverlay_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowOverLayIcon", ckShowOverlay.Checked);
-            if (formLoaded) {
-                SharpShell.Interop.Shell32.SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
-                if (Utility.GetSetting("EnableThumbnail")=="True")
+            if (formLoaded)
+            {
+                // SharpShell.Interop.Shell32.SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+                SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+                if (Utility.GetSetting("EnableThumbnail") == "True")
                     needClearThumbnailCache = true;
             }
         }
 
-        private void btnUpdate_Click(object sender, EventArgs e) {
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
             System.Diagnostics.Process.Start(string.Format(NonLocalizeResources.urlGithubHomeWithVersion, Assembly.GetExecutingAssembly().GetName().Version.ToString()));
         }
 
-        private void ckShowMenuIcon_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowMenuIcon_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowMenuIcon", ckShowMenuIcon.Checked);
         }
 
-        private void ckShowPlay_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowPlay_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowAppStoreWhenMultiSelected", ckAlwaysShowStore.Checked);
         }
 
-        private void twLeft_AfterSelect(object sender, TreeViewEventArgs e) {
+        private void twLeft_AfterSelect(object sender, TreeViewEventArgs e)
+        {
             DisablePenels();
-            if (twLeft.SelectedNode.Text == Resources.twGeneral) {
+            if (twLeft.SelectedNode.Text == Resources.twGeneral)
+            {
                 pnlGeneral.Visible = true;
                 btnUpdate.Visible = true;
-            } else if (twLeft.SelectedNode.Text == Resources.twIcon) {
+            }
+            else if (twLeft.SelectedNode.Text == Resources.twIcon)
+            {
                 pnlIcon.Visible = true;
-            } else if (twLeft.SelectedNode.Text == Resources.twRename) {
+            }
+            else if (twLeft.SelectedNode.Text == Resources.twRename)
+            {
                 pnlRenaming.Visible = true;
                 btnResetRenamePattern.Visible = true;
-            } else if (twLeft.SelectedNode.Text == Resources.twContextMenu) {
+            }
+            else if (twLeft.SelectedNode.Text == Resources.twContextMenu)
+            {
                 pnlContextMenu.Visible = true;
-            } else if (twLeft.SelectedNode.Text == Resources.twInfotip) {
+            }
+            else if (twLeft.SelectedNode.Text == Resources.twInfotip)
+            {
                 pnlInfoTip.Visible = true;
                 btnResetInfoTipPattern.Visible = true;
             }
             Utility.SaveSetting("LastPanel", twLeft.SelectedNode.Index);
         }
 
-        private void btnOK_Click(object sender, EventArgs e) {
+        private void btnOK_Click(object sender, EventArgs e)
+        {
             if (RenamePatternIsDirty)
                 Utility.SaveSetting("RenamePattern", txtRenamePattern.Text);
             if (ToolTipPatternIsDirty)
@@ -237,97 +270,119 @@ namespace ApkShellext2 {
             this.Close();
         }
 
-        private void ckShowAmazon_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowAmazon_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowAmazonStore", ckShowAmazon.Checked);
         }
 
-        private void ckbShowGoogle_CheckedChanged(object sender, EventArgs e) {
+        private void ckbShowGoogle_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowGooglePlay", ckShowGoogle.Checked);
         }
 
-        private void btnResetTooltipPattern_Click(object sender, EventArgs e) {
+        private void btnResetTooltipPattern_Click(object sender, EventArgs e)
+        {
             txtToolTipPattern.Text = NonLocalizeResources.strInfoTipDefault;
         }
 
-        private void btnResetRenamePattern_Click(object sender, EventArgs e) {
+        private void btnResetRenamePattern_Click(object sender, EventArgs e)
+        {
             txtRenamePattern.Text = Utility.GetSetting("RenamePattern", NonLocalizeResources.strRenamePatternDefault);
         }
 
-        private void ckShowApple_CheckedChanged(object sender, EventArgs e) {
-            Utility.SaveSetting("ShowAppleStore",ckShowGoogle.Checked);
+        private void ckShowApple_CheckedChanged(object sender, EventArgs e)
+        {
+            Utility.SaveSetting("ShowAppleStore", ckShowGoogle.Checked);
         }
 
-        private void ckShowMS_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowMS_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowMSStore", ckShowGoogle.Checked);
         }
 
-        private void ckShowAM_CheckedChanged(object sender, EventArgs e) {
+        private void ckShowAM_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowApkMirror", ckShowGoogle.Checked);
         }
 
         private bool RenamePatternIsDirty = false;
-        private void txtRename_TextChanged(object sender, EventArgs e) {
-                RenamePatternIsDirty = formLoaded;
+        private void txtRename_TextChanged(object sender, EventArgs e)
+        {
+            RenamePatternIsDirty = formLoaded;
         }
 
         private bool ToolTipPatternIsDirty = false;
-        private void txtToolTipPattern_TextChanged(object sender, EventArgs e) {
-                ToolTipPatternIsDirty = formLoaded;
+        private void txtToolTipPattern_TextChanged(object sender, EventArgs e)
+        {
+            ToolTipPatternIsDirty = formLoaded;
         }
 
-        private void Preferences_FormClosed(object sender, FormClosedEventArgs e) {
-            if (needClearThumbnailCache) {
+        private void Preferences_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (needClearThumbnailCache)
+            {
                 if (System.Windows.Forms.MessageBox.Show(
                     Resources.dialogNeedClearCache,
                     Resources.strClearCache,
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Exclamation) == DialogResult.Yes) {
-                        btnClearCache_Click(sender, new EventArgs());
+                    MessageBoxIcon.Exclamation) == DialogResult.Yes)
+                {
+                    btnClearCache_Click(sender, new EventArgs());
                 }
             }
         }
 
-        private void ckReplaceSpace_CheckedChanged(object sender, EventArgs e) {
+        private void ckReplaceSpace_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ReplaceSpace", ckReplaceSpace.Checked);
             txtReplaceWhiteSpace.Enabled = ckReplaceSpace.Checked;
         }
 
-        private void llbPatternVariables_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+        private void llbPatternVariables_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
             System.Diagnostics.Process.Start(NonLocalizeResources.urlPatternVarWiki);
         }
 
-        private void btnUpdate_Click_1(object sender, EventArgs e) {
-            System.Diagnostics.Process.Start(string.Format(Properties.NonLocalizeResources.urlGithubHomeWithVersion,Assembly.GetExecutingAssembly().GetName().Version.ToString()));
+        private void btnUpdate_Click_1(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start(string.Format(Properties.NonLocalizeResources.urlGithubHomeWithVersion, Assembly.GetExecutingAssembly().GetName().Version.ToString()));
         }
 
-        private void llbInfoTipPattVar_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+        private void llbInfoTipPattVar_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
             System.Diagnostics.Process.Start(NonLocalizeResources.urlPatternVarWiki);
         }
 
-        private void ckStretchIcon_CheckedChanged(object sender, EventArgs e) {
+        private void ckStretchIcon_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("StretchThumbnail", ckStretchThumbnail.Checked);
             needClearThumbnailCache = formLoaded;
         }
 
-        private void lblHelpTranslate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+        private void lblHelpTranslate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
             System.Diagnostics.Process.Start(NonLocalizeResources.urlTranslate);
         }
 
-        private void ckEnableThumbnail_CheckedChanged(object sender, EventArgs e) {
-            Utility.SaveSetting("EnableThumbnail",ckEnableThumbnail.Checked);
+        private void ckEnableThumbnail_CheckedChanged(object sender, EventArgs e)
+        {
+            Utility.SaveSetting("EnableThumbnail", ckEnableThumbnail.Checked);
             needClearThumbnailCache = formLoaded;
         }
 
-        private void Log(string message) {
+        private void Log(string message)
+        {
             Utility.Log(this, "", message);
         }
 
-        private void btnClearCache_Click(object sender, EventArgs e) {
+        private void btnClearCache_Click(object sender, EventArgs e)
+        {
             if (System.Windows.Forms.MessageBox.Show(
                     Resources.dialogClearCache,
                     Resources.strClearCache,
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Exclamation) == DialogResult.Yes) {
+                    MessageBoxIcon.Exclamation) == DialogResult.Yes)
+            {
                 Process process = new Process();
                 string path = Path.GetTempPath() + "\\clearcache.bat";
                 File.WriteAllText(path, NonLocalizeResources.cmdClearCache);
@@ -338,30 +393,36 @@ namespace ApkShellext2 {
             }
         }
 
-        private void CkShowNewVersionInfo_CheckedChanged(object sender, EventArgs e) {
+        private void CkShowNewVersionInfo_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("ShowNewVersion", ckShowNewVersionInfo.Checked);
         }
 
-        private void CkAdaptiveIconSupport_CheckedChanged(object sender, EventArgs e) {
+        private void CkAdaptiveIconSupport_CheckedChanged(object sender, EventArgs e)
+        {
             Utility.SaveSetting("SupportAdaptiveIcon", ckAdaptiveIconSupport.Checked);
             needClearThumbnailCache = formLoaded;
         }
 
-        private void Label1_Click(object sender, EventArgs e) {
+        private void Label1_Click(object sender, EventArgs e)
+        {
 
         }
 
         private bool txtReplaceWhiteSpaceDirty = false;
-        private void TxtReplaceWhiteSpace_TextChanged(object sender, EventArgs e) {
+        private void TxtReplaceWhiteSpace_TextChanged(object sender, EventArgs e)
+        {
             txtReplaceWhiteSpaceDirty = formLoaded;
         }
 
-        private void BtnPatreon_Click(object sender, EventArgs e) {
+        private void BtnPatreon_Click(object sender, EventArgs e)
+        {
             System.Diagnostics.Process.Start(Properties.NonLocalizeResources.urlPatreon);
         }
 
-        private void Preferences_ResizeBegin(object sender, EventArgs e) {
-            
+        private void Preferences_ResizeBegin(object sender, EventArgs e)
+        {
+
         }
     }
 }
